@@ -1,0 +1,45 @@
+.cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+
+  h1 {
+    color: #8c2b2b;
+    margin: 0;
+  }
+}
+
+.tabla-container {
+  overflow-x: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.tabla-casas {
+  width: 100%;
+
+  th.mat-mdc-header-cell {
+    background: linear-gradient(180deg, #faf6ee 0%, #f0e6d2 100%);
+    border-bottom: 2px solid #d4af37;
+    color: #6b1f1f;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  td.mat-mdc-cell {
+    padding-inline: 0.5rem;
+  }
+
+  tr.mat-mdc-row:nth-child(odd) {
+    background: #ffffff;
+  }
+
+  tr.mat-mdc-row:nth-child(even) {
+    background: #f9f7f2;
+  }
+
+  tr.mat-mdc-row:hover {
+    background: #f5eede;
+  }
+}

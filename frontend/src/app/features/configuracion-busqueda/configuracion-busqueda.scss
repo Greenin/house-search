@@ -1,0 +1,43 @@
+.tarjeta {
+  max-width: 900px;
+  margin: 0 auto;
+
+  h1 {
+    color: #8c2b2b;
+    margin-bottom: 1.5rem;
+  }
+}
+
+.campo-ancho {
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.fila-parametros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+
+  mat-form-field {
+    flex: 1 1 200px;
+  }
+}
+
+.toggle-campo {
+  display: flex;
+  align-items: center;
+  flex: 1 1 200px;
+}
+
+.acciones {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+}

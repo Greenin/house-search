@@ -1,0 +1,18 @@
+<mat-toolbar class="toolbar">
+  <div class="brand">
+    <mat-icon class="logo">villa</mat-icon>
+    <span class="title">House Search</span>
+  </div>
+  <nav class="nav">
+    @for (link of navLinks; track link.path) {
+      <a class="nav-link" [routerLink]="link.path" routerLinkActive="active">
+        <mat-icon>{{ link.icon }}</mat-icon>
+        <span>{{ link.label }}</span>
+      </a>
+    }
+  </nav>
+</mat-toolbar>
+
+<main class="app-content">
+  <router-outlet />
+</main>

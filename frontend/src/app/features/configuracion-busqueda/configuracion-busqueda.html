@@ -1,0 +1,113 @@
+<div class="tarjeta">
+  <h1>Configuración Búsqueda</h1>
+
+  <form [formGroup]="form" (ngSubmit)="guardar()">
+    <mat-form-field appearance="outline" class="campo-ancho">
+      <mat-label>Contexto de la casa buscada</mat-label>
+      <textarea
+        matInput
+        formControlName="contextoCasaBuscada"
+        rows="6"
+        maxlength="20000"
+      ></textarea>
+      <mat-hint align="end">{{ form.controls.contextoCasaBuscada.value?.length ?? 0 }} / 20000</mat-hint>
+    </mat-form-field>
+
+    <div class="fila-parametros">
+      <mat-form-field appearance="outline">
+        <mat-label>Precio máximo</mat-label>
+        <input matInput type="number" formControlName="precioMaximo" />
+        <span matTextSuffix>€</span>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Tamaño mínimo</mat-label>
+        <input matInput type="number" formControlName="tamanoMinimo" />
+        <span matTextSuffix>m²</span>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Nº habitaciones mínimo</mat-label>
+        <input matInput type="number" formControlName="numeroHabitacionesMinimo" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Nº baños mínimo</mat-label>
+        <input matInput type="number" formControlName="numeroBanosMinimo" />
+      </mat-form-field>
+    </div>
+
+    <div class="fila-parametros">
+      <mat-form-field appearance="outline">
+        <mat-label>Orientación deseada</mat-label>
+        <mat-select formControlName="orientacion">
+          <mat-option value="">(Cualquiera)</mat-option>
+          @for (orientacion of orientaciones; track orientacion) {
+            <mat-option [value]="orientacion">{{ orientacion }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <div class="toggle-campo">
+        <mat-slide-toggle formControlName="terrazaRequerida">
+          Terraza requerida {{ form.controls.terrazaRequerida.value ? '(Sí)' : '(No)' }}
+        </mat-slide-toggle>
+      </div>
+
+      <div class="toggle-campo">
+        <mat-slide-toggle formControlName="ascensorRequerido">
+          Ascensor requerido {{ form.controls.ascensorRequerido.value ? '(Sí)' : '(No)' }}
+        </mat-slide-toggle>
+      </div>
+
+      <div class="toggle-campo">
+        <mat-slide-toggle formControlName="climatizacionRequerida">
+          Climatización requerida {{ form.controls.climatizacionRequerida.value ? '(Sí)' : '(No)' }}
+        </mat-slide-toggle>
+      </div>
+    </div>
+
+    <mat-form-field appearance="outline" class="campo-ancho">
+      <mat-label>Palabras clave</mat-label>
+      <mat-chip-grid #gridPalabras>
+        @for (palabra of palabrasClave(); track palabra) {
+          <mat-chip-row (removed)="quitarPalabraClave(palabra)">
+            {{ palabra }}
+            <button matChipRemove><mat-icon>cancel</mat-icon></button>
+          </mat-chip-row>
+        }
+      </mat-chip-grid>
+      <input
+        placeholder="Añade una palabra clave y pulsa Enter"
+        [matChipInputFor]="gridPalabras"
+        [matChipInputSeparatorKeyCodes]="separadoresChip"
+        (matChipInputTokenEnd)="anadirPalabraClave($event)"
+      />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="campo-ancho">
+      <mat-label>Filtros negativos</mat-label>
+      <mat-chip-grid #gridFiltros>
+        @for (filtro of filtrosNegativos(); track filtro) {
+          <mat-chip-row (removed)="quitarFiltroNegativo(filtro)">
+            {{ filtro }}
+            <button matChipRemove><mat-icon>cancel</mat-icon></button>
+          </mat-chip-row>
+        }
+      </mat-chip-grid>
+      <input
+        placeholder="Añade un filtro negativo y pulsa Enter"
+        [matChipInputFor]="gridFiltros"
+        [matChipInputSeparatorKeyCodes]="separadoresChip"
+        (matChipInputTokenEnd)="anadirFiltroNegativo($event)"
+      />
+    </mat-form-field>
+
+    <div class="acciones">
+      <button mat-raised-button color="primary" type="submit" [disabled]="guardando()">
+        <mat-icon>save</mat-icon>
+        Guardar
+      </button>
+    </div>
+  </form>
+</div>
