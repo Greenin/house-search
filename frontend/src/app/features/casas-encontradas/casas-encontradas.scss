@@ -1,10 +1,5 @@
 .cabecera {
   margin-bottom: 1.5rem;
-
-  h1 {
-    color: #8c2b2b;
-    margin-bottom: 0.75rem;
-  }
 }
 
 .botonera-cabecera {
@@ -40,19 +35,30 @@
 .tabla-container {
   overflow-x: auto;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 12px;
 }
 
 .tabla-casas {
   width: 100%;
   table-layout: fixed;
 
+  --mat-table-header-container-height: 40px;
+  --mat-table-row-item-container-height: 36px;
+
   th.mat-mdc-header-cell {
     background: linear-gradient(180deg, #faf6ee 0%, #f0e6d2 100%);
-    border-bottom: 2px solid #d4af37;
+    border-bottom: 3px solid #d4af37;
+    border-right: 1px solid rgba(212, 175, 55, 0.4);
     color: #6b1f1f;
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 0.8125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
     white-space: nowrap;
+
+    &:last-of-type {
+      border-right: none;
+    }
   }
 
   td.mat-mdc-cell,

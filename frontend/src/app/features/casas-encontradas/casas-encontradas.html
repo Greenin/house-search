@@ -1,6 +1,4 @@
 <div class="cabecera">
-  <h1>Casas encontradas</h1>
-
   <div class="botonera-cabecera">
     <button
       mat-raised-button
@@ -35,7 +33,11 @@
 
   @if (estadoBusqueda(); as estado) {
     <p class="estado-busqueda">
-      Última ejecución del scraper: {{ estado.fechaInicio | date: 'dd/MM/yyyy HH:mm' }} — {{ estado.estado }}
+      Última ejecución del scraper:
+      {{ estado.fechaInicio ? (estado.fechaInicio | date: 'dd/MM/yyyy HH:mm') : 'nunca' }}
+      @if (estado.fechaInicio) {
+        — {{ estado.estado }}
+      }
       @if (estado.estado === 'FALLIDA' && estado.mensaje) {
         <span class="detalle-error" [matTooltip]="estado.mensaje">(ver detalle)</span>
       }
@@ -99,7 +101,13 @@
       <th mat-header-cell *matHeaderCellDef>Enlace</th>
       <td mat-cell *matCellDef="let casa">
         @if (casa.enlaceCasa) {
-          <a [href]="casa.enlaceCasa" target="_blank" rel="noopener" matTooltip="Abrir en el portal">
+          <a
+            mat-icon-button
+            [href]="casa.enlaceCasa"
+            target="_blank"
+            rel="noopener"
+            matTooltip="Abrir en el portal"
+          >
             <mat-icon>open_in_new</mat-icon>
           </a>
         } @else {
