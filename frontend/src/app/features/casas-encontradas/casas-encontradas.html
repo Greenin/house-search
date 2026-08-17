@@ -87,14 +87,9 @@
       <td mat-cell *matCellDef="let casa">{{ casa.estado === 'NUEVA' ? 'Nuevo' : casa.estado === 'SEGUNDA_MANO' ? 'Segunda mano' : '—' }}</td>
     </ng-container>
 
-    <ng-container matColumnDef="terraza">
-      <th mat-header-cell *matHeaderCellDef>Terraza</th>
-      <td mat-cell *matCellDef="let casa">{{ casa.terraza === true ? 'Sí' : casa.terraza === false ? 'No' : '—' }}</td>
-    </ng-container>
-
     <ng-container matColumnDef="puntuacion">
-      <th mat-header-cell *matHeaderCellDef>Puntuación</th>
-      <td mat-cell *matCellDef="let casa">{{ casa.puntuacion ?? '—' }}</td>
+      <th mat-header-cell *matHeaderCellDef class="columna-puntuacion" matTooltip="Puntuación">Puntuación</th>
+      <td mat-cell *matCellDef="let casa" class="columna-puntuacion">{{ casa.puntuacion ?? '—' }}</td>
     </ng-container>
 
     <ng-container matColumnDef="enlace">
@@ -116,16 +111,6 @@
       </td>
     </ng-container>
 
-    <ng-container matColumnDef="orientacion">
-      <th mat-header-cell *matHeaderCellDef>Orientación</th>
-      <td mat-cell *matCellDef="let casa">{{ casa.orientacion ?? '—' }}</td>
-    </ng-container>
-
-    <ng-container matColumnDef="ascensor">
-      <th mat-header-cell *matHeaderCellDef>Ascensor</th>
-      <td mat-cell *matCellDef="let casa">{{ casa.ascensor === true ? 'Sí' : casa.ascensor === false ? 'No' : '—' }}</td>
-    </ng-container>
-
     <ng-container matColumnDef="acciones">
       <th mat-header-cell *matHeaderCellDef>Acciones</th>
       <td mat-cell *matCellDef="let casa">
@@ -142,6 +127,9 @@
       <td mat-cell *matCellDef="let casa" [attr.colspan]="columnasVisibles.length">
         @if (idCasaExpandida() === casa.idCasa) {
           <div class="detalle-casa">
+            <div><strong>Terraza:</strong> {{ casa.terraza === true ? 'Sí' : casa.terraza === false ? 'No' : '—' }}</div>
+            <div><strong>Orientación:</strong> {{ casa.orientacion ?? '—' }}</div>
+            <div><strong>Ascensor:</strong> {{ casa.ascensor === true ? 'Sí' : casa.ascensor === false ? 'No' : '—' }}</div>
             <div><strong>Descripción:</strong> {{ textoPlano(casa.descripcion) || '—' }}</div>
             <div><strong>Climatización:</strong> {{ casa.climatizacion ?? '—' }}</div>
             <div><strong>Calefacción:</strong> {{ casa.calefaccion ?? '—' }}</div>

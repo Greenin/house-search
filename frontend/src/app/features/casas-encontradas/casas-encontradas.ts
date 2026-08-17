@@ -20,11 +20,8 @@ const COLUMNAS_VISIBLES = [
   'banos',
   'planta',
   'estado',
-  'terraza',
   'puntuacion',
   'enlace',
-  'orientacion',
-  'ascensor',
   'acciones',
 ];
 

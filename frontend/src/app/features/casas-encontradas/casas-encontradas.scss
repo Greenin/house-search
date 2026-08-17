@@ -76,6 +76,11 @@
     white-space: nowrap;
   }
 
+  .columna-puntuacion {
+    width: 80px;
+    max-width: 80px;
+  }
+
   .fila-casa:nth-child(odd) {
     background: #ffffff;
   }
