@@ -5,15 +5,27 @@ import { enviarCasas } from './lib/insert.js';
 import { cumpleCriterios, claveDeduplicado } from './lib/normalize.js';
 import * as idealista from './sources/idealista.js';
 import * as fotocasa from './sources/fotocasa.js';
+import * as habitaclia from './sources/habitaclia.js';
 
-// Idealista y Fotocasa estan implementadas como stubs (Playwright, fuente mas
-// fragil por las protecciones anti-bot de los portales inmobiliarios) y
-// deliberadamente NO estan en este array hasta que se implementen de verdad
-// (ver scraper/sources/idealista.js). Cuando una fuente este lista se anade
-// aqui, ej.: { nombre: 'Idealista', buscar: idealista.buscar, requierePlaywright: true }.
-const FUENTES = [];
+// Idealista y Fotocasa prohiben expresamente el scraping en sus condiciones
+// de uso y lo vigilan activamente con anti-bot (DataDome) -> se dejan como
+// stubs, deliberadamente fuera de este array (ver sources/idealista.js y
+// sources/fotocasa.js). Habitaclia es la primera fuente implementada de
+// verdad: robots.txt permisivo y sin prohibicion expresa de acceso
+// automatizado en sus condiciones (ver sources/habitaclia.js).
+//
+// requierePlaywright distingue las dos formas en que el backend puede lanzar
+// esta ejecucion (ver SearchRunnerService): el boton "Ejecutar busqueda"
+// (todas las fuentes, limitado a una vez al dia para proteger el rate-limit
+// de las fuentes que si necesitan Playwright) y "Busqueda sin Playwright"
+// (MODO_SCRAPER=SIN_PLAYWRIGHT, solo fuentes con requierePlaywright:false,
+// sin limite diario).
+const FUENTES = [{ nombre: 'Habitaclia', buscar: habitaclia.buscar, requierePlaywright: false }];
 
 async function main() {
+  const soloSinPlaywright = process.env.MODO_SCRAPER === 'SIN_PLAYWRIGHT';
+  const fuentesAEjecutar = soloSinPlaywright ? FUENTES.filter((f) => !f.requierePlaywright) : FUENTES;
+
   const configDinamica = await obtenerConfiguracionBusqueda().catch((err) => {
     console.warn(`No se pudo leer la configuracion de busqueda: ${err.message}`);
     return {};
@@ -23,7 +35,7 @@ async function main() {
   const todas = [];
   const vistas = new Set();
 
-  for (const fuente of FUENTES) {
+  for (const fuente of fuentesAEjecutar) {
     try {
       console.log(`Buscando en ${fuente.nombre}...`);
       const resultados = await fuente.buscar(config);
@@ -39,8 +51,12 @@ async function main() {
     }
   }
 
-  if (FUENTES.length === 0) {
-    console.warn('No hay ninguna fuente activa todavia (Idealista/Fotocasa siguen en stub).');
+  if (fuentesAEjecutar.length === 0) {
+    console.warn(
+      soloSinPlaywright
+        ? 'No hay ninguna fuente sin Playwright activa todavia.'
+        : 'No hay ninguna fuente activa todavia (Idealista/Fotocasa siguen en stub).',
+    );
   }
 
   if (todas.length === 0) {

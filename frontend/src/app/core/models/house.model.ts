@@ -1,5 +1,5 @@
 export type EstadoCasa = 'NUEVA' | 'SEGUNDA_MANO';
-export type Fuente = 'IDEALISTA' | 'FOTOCASA' | 'OTRA';
+export type Fuente = 'IDEALISTA' | 'FOTOCASA' | 'HABITACLIA' | 'OTRA';
 export type Prioridad = 'ALTA' | 'MEDIA' | 'BAJA';
 
 export interface House {

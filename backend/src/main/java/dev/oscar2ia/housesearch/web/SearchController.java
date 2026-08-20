@@ -23,16 +23,32 @@ public class SearchController {
 	@PostMapping("/run")
 	public ResponseEntity<SearchStatusResponse> ejecutar() {
 		ResultadoInicioBusqueda resultado = searchRunnerService.iniciarBusqueda();
-		HttpStatus status = switch (resultado) {
-			case INICIADO -> HttpStatus.ACCEPTED;
-			case YA_EN_EJECUCION -> HttpStatus.CONFLICT;
-			case LIMITE_DIARIO_ALCANZADO -> HttpStatus.TOO_MANY_REQUESTS;
-		};
-		return ResponseEntity.status(status).body(searchRunnerService.estadoActual());
+		return respuestaSegunResultado(resultado, searchRunnerService.estadoActual());
 	}
 
 	@GetMapping("/status")
 	public SearchStatusResponse estado() {
 		return searchRunnerService.estadoActual();
+	}
+
+	@PostMapping("/run-sin-playwright")
+	public ResponseEntity<SearchStatusResponse> ejecutarSinPlaywright() {
+		ResultadoInicioBusqueda resultado = searchRunnerService.iniciarBusquedaSinPlaywright();
+		return respuestaSegunResultado(resultado, searchRunnerService.estadoActualSinPlaywright());
+	}
+
+	@GetMapping("/status-sin-playwright")
+	public SearchStatusResponse estadoSinPlaywright() {
+		return searchRunnerService.estadoActualSinPlaywright();
+	}
+
+	private ResponseEntity<SearchStatusResponse> respuestaSegunResultado(
+			ResultadoInicioBusqueda resultado, SearchStatusResponse estado) {
+		HttpStatus status = switch (resultado) {
+			case INICIADO -> HttpStatus.ACCEPTED;
+			case YA_EN_EJECUCION -> HttpStatus.CONFLICT;
+			case LIMITE_DIARIO_ALCANZADO -> HttpStatus.TOO_MANY_REQUESTS;
+		};
+		return ResponseEntity.status(status).body(estado);
 	}
 }

@@ -20,4 +20,16 @@ export class SearchApi {
   estado(): Observable<SearchStatus> {
     return this.http.get<SearchStatus>(`${this.baseUrl}/status`);
   }
+
+  ejecutarSinPlaywright(): Observable<SearchStatus> {
+    return this.http.post<SearchStatus>(
+      `${this.baseUrl}/run-sin-playwright`,
+      {},
+      { headers: { 'X-API-Key': environment.apiKey } },
+    );
+  }
+
+  estadoSinPlaywright(): Observable<SearchStatus> {
+    return this.http.get<SearchStatus>(`${this.baseUrl}/status-sin-playwright`);
+  }
 }

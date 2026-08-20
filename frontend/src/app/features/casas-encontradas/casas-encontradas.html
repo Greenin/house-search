@@ -4,7 +4,7 @@
       mat-raised-button
       color="primary"
       class="btn-ejecutar"
-      [disabled]="!puedeBuscarHoy() || ejecutandoBusqueda()"
+      [disabled]="!puedeBuscarHoy() || ejecutandoBusqueda() || ejecutandoBusquedaSinPlaywright()"
       [matTooltip]="
         !puedeBuscarHoy() && !ejecutandoBusqueda()
           ? 'Ya se ejecutó hoy. Solo se permite una vez al día para no bloquear tu IP.'
@@ -28,6 +28,20 @@
     <button mat-stroked-button color="warn" (click)="limpiar()">
       <mat-icon>delete_sweep</mat-icon>
       Limpiar
+    </button>
+
+    <button
+      mat-stroked-button
+      [disabled]="ejecutandoBusqueda() || ejecutandoBusquedaSinPlaywright()"
+      matTooltip="Solo ejecuta las fuentes que no necesitan Playwright (hoy: Habitaclia). Sin límite diario."
+      (click)="ejecutarBusquedaSinPlaywright()"
+    >
+      @if (ejecutandoBusquedaSinPlaywright()) {
+        <mat-spinner diameter="18"></mat-spinner>
+      } @else {
+        <mat-icon>bolt</mat-icon>
+      }
+      Búsqueda sin Playwright
     </button>
   </div>
 

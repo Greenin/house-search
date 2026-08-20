@@ -15,13 +15,20 @@ export class EjecucionBusqueda implements OnInit {
   private readonly searchApi = inject(SearchApi);
   private readonly snackBar = inject(MatSnackBar);
 
-  protected readonly estado = signal<SearchStatus | null>(null);
+  protected readonly estadoCompleta = signal<SearchStatus | null>(null);
+  protected readonly estadoSinPlaywright = signal<SearchStatus | null>(null);
 
   ngOnInit(): void {
     this.searchApi.estado().subscribe({
-      next: (estado) => this.estado.set(estado),
+      next: (estado) => this.estadoCompleta.set(estado),
       error: () =>
-        this.snackBar.open('No se pudo cargar el estado de la ejecución de búsqueda.', 'Cerrar', {
+        this.snackBar.open('No se pudo cargar el estado de "Ejecutar búsqueda".', 'Cerrar', { duration: 5000 }),
+    });
+
+    this.searchApi.estadoSinPlaywright().subscribe({
+      next: (estado) => this.estadoSinPlaywright.set(estado),
+      error: () =>
+        this.snackBar.open('No se pudo cargar el estado de "Búsqueda sin Playwright".', 'Cerrar', {
           duration: 5000,
         }),
     });

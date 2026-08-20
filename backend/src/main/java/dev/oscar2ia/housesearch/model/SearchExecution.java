@@ -12,9 +12,12 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * Fila unica (id fijo = ID_UNICO) que registra el estado de la ultima
- * ejecucion del scraper. Persistida en BD para que el limite de "una vez al
- * dia" sobreviva a reinicios del backend.
+ * Registra el estado de la ultima ejecucion del scraper. Dos filas de id fijo
+ * en vez de una: ID_COMPLETA (boton "Ejecutar busqueda", todas las fuentes,
+ * limitado a una vez al dia) e ID_SIN_PLAYWRIGHT (boton "Busqueda sin
+ * Playwright", solo fuentes sin Playwright, sin limite diario) -> el limite
+ * diario de una no debe verse afectado por ejecuciones de la otra. Persistida
+ * en BD para que el limite sobreviva a reinicios del backend.
  */
 @Entity
 @Table(name = "search_execution")
@@ -22,10 +25,11 @@ import lombok.Setter;
 @Setter
 public class SearchExecution {
 
-	public static final Long ID_UNICO = 1L;
+	public static final Long ID_COMPLETA = 1L;
+	public static final Long ID_SIN_PLAYWRIGHT = 2L;
 
 	@Id
-	private Long id = ID_UNICO;
+	private Long id = ID_COMPLETA;
 
 	@Enumerated(EnumType.STRING)
 	private EstadoBusqueda estado = EstadoBusqueda.INACTIVA;

@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,10 +23,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Lanza el scraper Node.js como proceso hijo en un hilo daemon (no bloquea el
- * request HTTP), con un lock de instancia para evitar solapar ejecuciones y un
- * limite de una ejecucion completa al dia persistido en BD (sobrevive a
- * reinicios del backend). No hay variante "sin Playwright": todas las fuentes
- * de casas lo requieren por igual.
+ * request HTTP), con un lock de instancia para evitar solapar ejecuciones.
+ * Soporta dos modos, cada uno con su propia fila de {@link SearchExecution}
+ * (ver esa clase): "completa" (todas las fuentes, limitada a una vez al dia,
+ * persistido en BD para sobrevivir a reinicios) y "sin Playwright" (solo
+ * fuentes que no necesitan navegador, sin limite diario). Ambos modos
+ * comparten el mismo lock de instancia: no pueden correr dos scrapers a la
+ * vez porque podrian golpear la misma fuente por duplicado.
  */
 @Service
 public class SearchRunnerService {
@@ -50,14 +54,26 @@ public class SearchRunnerService {
 		this.command = command;
 	}
 
+	/** Boton "Ejecutar busqueda": todas las fuentes, maximo una vez al dia. */
 	public ResultadoInicioBusqueda iniciarBusqueda() {
-		synchronized (lock) {
-			SearchExecution ejecucion = obtenerOCrearEjecucion();
+		return iniciarEjecucion(SearchExecution.ID_COMPLETA, true, Map.of());
+	}
 
-			if (ejecucion.getEstado() == EstadoBusqueda.EN_EJECUCION) {
+	/** Boton "Busqueda sin Playwright": solo fuentes sin Playwright, sin limite diario. */
+	public ResultadoInicioBusqueda iniciarBusquedaSinPlaywright() {
+		return iniciarEjecucion(SearchExecution.ID_SIN_PLAYWRIGHT, false, Map.of("MODO_SCRAPER", "SIN_PLAYWRIGHT"));
+	}
+
+	private ResultadoInicioBusqueda iniciarEjecucion(
+			Long idEjecucion, boolean aplicarLimiteDiario, Map<String, String> variablesExtra) {
+		synchronized (lock) {
+			if (hayAlgunaEjecucionEnCurso()) {
 				return ResultadoInicioBusqueda.YA_EN_EJECUCION;
 			}
-			if (ejecucion.getFechaInicio() != null
+
+			SearchExecution ejecucion = obtenerOCrearEjecucion(idEjecucion);
+			if (aplicarLimiteDiario
+					&& ejecucion.getFechaInicio() != null
 					&& ejecucion.getFechaInicio().toLocalDate().isEqual(LocalDate.now())) {
 				return ResultadoInicioBusqueda.LIMITE_DIARIO_ALCANZADO;
 			}
@@ -70,24 +86,41 @@ public class SearchRunnerService {
 			searchExecutionRepository.save(ejecucion);
 		}
 
-		Thread hilo = new Thread(this::ejecutarProceso, "scraper-runner");
+		Thread hilo = new Thread(() -> ejecutarProceso(idEjecucion, variablesExtra), "scraper-runner");
 		hilo.setDaemon(true);
 		hilo.start();
 
 		return ResultadoInicioBusqueda.INICIADO;
 	}
 
-	@Transactional(readOnly = true)
-	public SearchStatusResponse estadoActual() {
-		return SearchStatusResponse.from(obtenerOCrearEjecucionSoloLectura());
+	/** Ninguno de los dos modos puede arrancar si el otro ya esta en marcha: podrian golpear la misma fuente a la vez. */
+	private boolean hayAlgunaEjecucionEnCurso() {
+		return obtenerOCrearEjecucion(SearchExecution.ID_COMPLETA).getEstado() == EstadoBusqueda.EN_EJECUCION
+				|| obtenerOCrearEjecucion(SearchExecution.ID_SIN_PLAYWRIGHT).getEstado() == EstadoBusqueda.EN_EJECUCION;
 	}
 
-	private void ejecutarProceso() {
+	@Transactional(readOnly = true)
+	public SearchStatusResponse estadoActual() {
+		return SearchStatusResponse.from(obtenerOCrearEjecucionSoloLectura(SearchExecution.ID_COMPLETA));
+	}
+
+	@Transactional(readOnly = true)
+	public SearchStatusResponse estadoActualSinPlaywright() {
+		return SearchStatusResponse.from(obtenerOCrearEjecucionSoloLectura(SearchExecution.ID_SIN_PLAYWRIGHT));
+	}
+
+	private void ejecutarProceso(Long idEjecucion, Map<String, String> variablesExtra) {
 		Deque<String> ultimasLineas = new ArrayDeque<>();
 		try {
 			ProcessBuilder pb = new ProcessBuilder(command.trim().split("\\s+"));
 			pb.directory(new File(workingDir));
 			pb.redirectErrorStream(true);
+			// El backend no tiene pantalla asociada: forzamos Playwright a modo
+			// headless pase lo que pase en el entorno, aunque en desarrollo se
+			// lance el scraper a mano con HEADLESS sin definir (visible) para
+			// depurar selectores (ver scraper/lib/browser.js).
+			pb.environment().put("HEADLESS", "true");
+			pb.environment().putAll(variablesExtra);
 			Process proceso = pb.start();
 
 			Thread lector = new Thread(() -> leerSalida(proceso, ultimasLineas), "scraper-runner-lector");
@@ -103,18 +136,21 @@ public class SearchRunnerService {
 			if (!terminoATiempo) {
 				proceso.destroyForcibly();
 				actualizarResultado(
-						EstadoBusqueda.FALLIDA, null, "Timeout tras " + TIMEOUT_MINUTOS + " minutos.\n" + mensaje);
+						idEjecucion,
+						EstadoBusqueda.FALLIDA,
+						null,
+						"Timeout tras " + TIMEOUT_MINUTOS + " minutos.\n" + mensaje);
 				return;
 			}
 
 			int codigo = proceso.exitValue();
 			EstadoBusqueda estadoFinal = codigo == 0 ? EstadoBusqueda.COMPLETADA : EstadoBusqueda.FALLIDA;
-			actualizarResultado(estadoFinal, codigo, mensaje);
+			actualizarResultado(idEjecucion, estadoFinal, codigo, mensaje);
 		} catch (Throwable t) {
 			// Red de seguridad final: un fallo inesperado no debe dejar la fila
 			// colgada en EN_EJECUCION para siempre.
 			log.error("Fallo inesperado ejecutando el scraper", t);
-			actualizarResultado(EstadoBusqueda.FALLIDA, null, "Error inesperado: " + t.getMessage());
+			actualizarResultado(idEjecucion, EstadoBusqueda.FALLIDA, null, "Error inesperado: " + t.getMessage());
 		}
 	}
 
@@ -135,9 +171,9 @@ public class SearchRunnerService {
 		}
 	}
 
-	private void actualizarResultado(EstadoBusqueda estado, Integer codigoSalida, String mensaje) {
+	private void actualizarResultado(Long idEjecucion, EstadoBusqueda estado, Integer codigoSalida, String mensaje) {
 		synchronized (lock) {
-			SearchExecution ejecucion = obtenerOCrearEjecucion();
+			SearchExecution ejecucion = obtenerOCrearEjecucion(idEjecucion);
 			ejecucion.setEstado(estado);
 			ejecucion.setFechaFin(LocalDateTime.now());
 			ejecucion.setCodigoSalida(codigoSalida);
@@ -146,12 +182,18 @@ public class SearchRunnerService {
 		}
 	}
 
-	private SearchExecution obtenerOCrearEjecucion() {
-		return searchExecutionRepository.findById(SearchExecution.ID_UNICO).orElseGet(SearchExecution::new);
+	private SearchExecution obtenerOCrearEjecucion(Long id) {
+		return searchExecutionRepository.findById(id).orElseGet(() -> nuevaEjecucion(id));
 	}
 
 	@Transactional(readOnly = true)
-	protected SearchExecution obtenerOCrearEjecucionSoloLectura() {
-		return searchExecutionRepository.findById(SearchExecution.ID_UNICO).orElseGet(SearchExecution::new);
+	protected SearchExecution obtenerOCrearEjecucionSoloLectura(Long id) {
+		return searchExecutionRepository.findById(id).orElseGet(() -> nuevaEjecucion(id));
+	}
+
+	private SearchExecution nuevaEjecucion(Long id) {
+		SearchExecution ejecucion = new SearchExecution();
+		ejecucion.setId(id);
+		return ejecucion;
 	}
 }

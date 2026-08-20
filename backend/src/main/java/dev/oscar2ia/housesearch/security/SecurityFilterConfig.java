@@ -10,7 +10,7 @@ public class SecurityFilterConfig {
 	@Bean
 	public FilterRegistrationBean<ApiKeyFilter> apiKeyFilterRegistration(ApiKeyFilter apiKeyFilter) {
 		FilterRegistrationBean<ApiKeyFilter> registration = new FilterRegistrationBean<>(apiKeyFilter);
-		registration.addUrlPatterns("/api/house/insert", "/api/search/run");
+		registration.addUrlPatterns("/api/house/insert", "/api/search/run", "/api/search/run-sin-playwright");
 		return registration;
 	}
 }

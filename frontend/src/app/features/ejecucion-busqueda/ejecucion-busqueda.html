@@ -1,7 +1,40 @@
 <div class="tarjeta">
-  <h1>Ejecución búsqueda</h1>
+  <h1>Ejecutar búsqueda</h1>
 
-  @if (estado(); as e) {
+  @if (estadoCompleta(); as e) {
+    <div class="fila-parametros">
+      <mat-form-field appearance="outline">
+        <mat-label>Estado</mat-label>
+        <input matInput [value]="e.estado" readonly />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha inicio</mat-label>
+        <input matInput [value]="e.fechaInicio ?? '—'" readonly />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha fin</mat-label>
+        <input matInput [value]="e.fechaFin ?? '—'" readonly />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Código salida</mat-label>
+        <input matInput [value]="e.codigoSalida ?? '—'" readonly />
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline" class="campo-ancho">
+      <mat-label>Mensaje</mat-label>
+      <textarea matInput [value]="e.mensaje ?? ''" readonly rows="12"></textarea>
+    </mat-form-field>
+  }
+</div>
+
+<div class="tarjeta">
+  <h1>Búsqueda sin Playwright</h1>
+
+  @if (estadoSinPlaywright(); as e) {
     <div class="fila-parametros">
       <mat-form-field appearance="outline">
         <mat-label>Estado</mat-label>

@@ -41,6 +41,7 @@ export class CasasEncontradas implements OnInit {
   protected readonly casas = signal<House[]>([]);
   protected readonly cargando = signal(false);
   protected readonly ejecutandoBusqueda = signal(false);
+  protected readonly ejecutandoBusquedaSinPlaywright = signal(false);
   protected readonly estadoBusqueda = signal<SearchStatus | null>(null);
   protected readonly idCasaExpandida = signal<number | null>(null);
 
@@ -161,6 +162,42 @@ export class CasasEncontradas implements OnInit {
       },
       error: () => {
         this.ejecutandoBusqueda.set(false);
+      },
+    });
+  }
+
+  protected ejecutarBusquedaSinPlaywright(): void {
+    this.ejecutandoBusquedaSinPlaywright.set(true);
+    this.searchApi.ejecutarSinPlaywright().subscribe({
+      next: () => this.esperarFinDeBusquedaSinPlaywright(),
+      error: (err) => {
+        this.ejecutandoBusquedaSinPlaywright.set(false);
+        if (err.status === 409) {
+          this.snackBar.open('Ya hay una búsqueda en marcha.', 'Cerrar', { duration: 5000 });
+        } else {
+          this.snackBar.open('No se pudo lanzar la búsqueda sin Playwright.', 'Cerrar', { duration: 5000 });
+        }
+      },
+    });
+  }
+
+  private esperarFinDeBusquedaSinPlaywright(): void {
+    this.searchApi.estadoSinPlaywright().subscribe({
+      next: (estado) => {
+        if (estado.estado === 'EN_EJECUCION') {
+          setTimeout(() => this.esperarFinDeBusquedaSinPlaywright(), 1500);
+          return;
+        }
+        this.ejecutandoBusquedaSinPlaywright.set(false);
+        this.cargarCasas();
+        if (estado.estado === 'COMPLETADA') {
+          this.snackBar.open('Búsqueda sin Playwright completada.', 'Cerrar', { duration: 4000 });
+        } else if (estado.estado === 'FALLIDA') {
+          this.snackBar.open('La búsqueda sin Playwright ha fallado.', 'Cerrar', { duration: 5000 });
+        }
+      },
+      error: () => {
+        this.ejecutandoBusquedaSinPlaywright.set(false);
       },
     });
   }
