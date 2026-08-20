@@ -42,30 +42,43 @@ public class SearchRunnerService {
 	private final Object lock = new Object();
 
 	private final SearchExecutionRepository searchExecutionRepository;
+	private final HouseService houseService;
 	private final String workingDir;
 	private final String command;
 
 	public SearchRunnerService(
 			SearchExecutionRepository searchExecutionRepository,
+			HouseService houseService,
 			@Value("${app.scraper.working-dir:../scraper}") String workingDir,
 			@Value("${app.scraper.command:node index.js}") String command) {
 		this.searchExecutionRepository = searchExecutionRepository;
+		this.houseService = houseService;
 		this.workingDir = workingDir;
 		this.command = command;
 	}
 
-	/** Boton "Ejecutar busqueda": todas las fuentes, maximo una vez al dia. */
+	/**
+	 * Boton "Ejecutar busqueda": todas las fuentes, maximo una vez al dia. Antes
+	 * de lanzar el scraper se borra toda la tabla de casas encontradas (ver
+	 * HouseService.borrarTodasLasCasas): el listado de "Casas encontradas"
+	 * refleja siempre la ultima ejecucion, no un acumulado historico. Las casas
+	 * ya movidas a SelectedHouse no se ven afectadas.
+	 */
 	public ResultadoInicioBusqueda iniciarBusqueda() {
-		return iniciarEjecucion(SearchExecution.ID_COMPLETA, true, Map.of());
+		return iniciarEjecucion(SearchExecution.ID_COMPLETA, true, Map.of(), houseService::borrarTodasLasCasas);
 	}
 
-	/** Boton "Busqueda sin Playwright": solo fuentes sin Playwright, sin limite diario. */
+	/** Boton "Busqueda sin Playwright": solo fuentes sin Playwright, sin limite diario. Mismo borrado previo que arriba. */
 	public ResultadoInicioBusqueda iniciarBusquedaSinPlaywright() {
-		return iniciarEjecucion(SearchExecution.ID_SIN_PLAYWRIGHT, false, Map.of("MODO_SCRAPER", "SIN_PLAYWRIGHT"));
+		return iniciarEjecucion(
+				SearchExecution.ID_SIN_PLAYWRIGHT,
+				false,
+				Map.of("MODO_SCRAPER", "SIN_PLAYWRIGHT"),
+				houseService::borrarTodasLasCasas);
 	}
 
 	private ResultadoInicioBusqueda iniciarEjecucion(
-			Long idEjecucion, boolean aplicarLimiteDiario, Map<String, String> variablesExtra) {
+			Long idEjecucion, boolean aplicarLimiteDiario, Map<String, String> variablesExtra, Runnable antesDeArrancar) {
 		synchronized (lock) {
 			if (hayAlgunaEjecucionEnCurso()) {
 				return ResultadoInicioBusqueda.YA_EN_EJECUCION;
@@ -76,6 +89,12 @@ public class SearchRunnerService {
 					&& ejecucion.getFechaInicio() != null
 					&& ejecucion.getFechaInicio().toLocalDate().isEqual(LocalDate.now())) {
 				return ResultadoInicioBusqueda.LIMITE_DIARIO_ALCANZADO;
+			}
+
+			// Dentro del lock: garantiza que el borrado termina antes de que el
+			// scraper arranque y pueda insertar resultados nuevos.
+			if (antesDeArrancar != null) {
+				antesDeArrancar.run();
 			}
 
 			ejecucion.setEstado(EstadoBusqueda.EN_EJECUCION);

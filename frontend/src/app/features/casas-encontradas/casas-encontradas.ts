@@ -43,6 +43,7 @@ export class CasasEncontradas implements OnInit {
   protected readonly ejecutandoBusqueda = signal(false);
   protected readonly ejecutandoBusquedaSinPlaywright = signal(false);
   protected readonly estadoBusqueda = signal<SearchStatus | null>(null);
+  protected readonly estadoBusquedaSinPlaywright = signal<SearchStatus | null>(null);
   protected readonly idCasaExpandida = signal<number | null>(null);
 
   protected readonly puedeBuscarHoy = computed(() => {
@@ -59,9 +60,28 @@ export class CasasEncontradas implements OnInit {
     );
   });
 
+  /**
+   * Texto de "Última ejecución del scraper": si alguna de las dos búsquedas
+   * está en marcha se muestra esa (para no quedarse pegado al estado de la
+   * ejecución anterior); si ninguna lo está, se muestra la más reciente de
+   * las dos por fecha de inicio.
+   */
+  protected readonly estadoMostrado = computed(() => {
+    const completa = this.estadoBusqueda();
+    const sinPlaywright = this.estadoBusquedaSinPlaywright();
+    if (completa?.estado === 'EN_EJECUCION') return completa;
+    if (sinPlaywright?.estado === 'EN_EJECUCION') return sinPlaywright;
+    if (!completa) return sinPlaywright;
+    if (!sinPlaywright) return completa;
+    const fechaCompleta = completa.fechaInicio ? new Date(completa.fechaInicio).getTime() : 0;
+    const fechaSinPlaywright = sinPlaywright.fechaInicio ? new Date(sinPlaywright.fechaInicio).getTime() : 0;
+    return fechaSinPlaywright > fechaCompleta ? sinPlaywright : completa;
+  });
+
   ngOnInit(): void {
     this.cargarCasas();
     this.cargarEstadoBusqueda();
+    this.cargarEstadoBusquedaSinPlaywright();
   }
 
   protected cargarCasas(): void {
@@ -81,6 +101,15 @@ export class CasasEncontradas implements OnInit {
   private cargarEstadoBusqueda(): void {
     this.searchApi.estado().subscribe({
       next: (estado) => this.estadoBusqueda.set(estado),
+      error: () => {
+        // silencioso: la vista sigue siendo utilizable sin el estado de busqueda
+      },
+    });
+  }
+
+  private cargarEstadoBusquedaSinPlaywright(): void {
+    this.searchApi.estadoSinPlaywright().subscribe({
+      next: (estado) => this.estadoBusquedaSinPlaywright.set(estado),
       error: () => {
         // silencioso: la vista sigue siendo utilizable sin el estado de busqueda
       },
@@ -169,7 +198,10 @@ export class CasasEncontradas implements OnInit {
   protected ejecutarBusquedaSinPlaywright(): void {
     this.ejecutandoBusquedaSinPlaywright.set(true);
     this.searchApi.ejecutarSinPlaywright().subscribe({
-      next: () => this.esperarFinDeBusquedaSinPlaywright(),
+      next: (estado) => {
+        this.estadoBusquedaSinPlaywright.set(estado);
+        this.esperarFinDeBusquedaSinPlaywright();
+      },
       error: (err) => {
         this.ejecutandoBusquedaSinPlaywright.set(false);
         if (err.status === 409) {
@@ -184,6 +216,7 @@ export class CasasEncontradas implements OnInit {
   private esperarFinDeBusquedaSinPlaywright(): void {
     this.searchApi.estadoSinPlaywright().subscribe({
       next: (estado) => {
+        this.estadoBusquedaSinPlaywright.set(estado);
         if (estado.estado === 'EN_EJECUCION') {
           setTimeout(() => this.esperarFinDeBusquedaSinPlaywright(), 1500);
           return;

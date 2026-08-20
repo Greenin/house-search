@@ -6,13 +6,21 @@ import { cumpleCriterios, claveDeduplicado } from './lib/normalize.js';
 import * as idealista from './sources/idealista.js';
 import * as fotocasa from './sources/fotocasa.js';
 import * as habitaclia from './sources/habitaclia.js';
+import * as pisos from './sources/pisos.js';
 
 // Idealista y Fotocasa prohiben expresamente el scraping en sus condiciones
 // de uso y lo vigilan activamente con anti-bot (DataDome) -> se dejan como
 // stubs, deliberadamente fuera de este array (ver sources/idealista.js y
-// sources/fotocasa.js). Habitaclia es la primera fuente implementada de
-// verdad: robots.txt permisivo y sin prohibicion expresa de acceso
-// automatizado en sus condiciones (ver sources/habitaclia.js).
+// sources/fotocasa.js).
+//
+// Habitaclia fue la primera fuente implementada de verdad (robots.txt
+// permisivo, sin prohibicion expresa de scraping), pero resulto estar
+// protegida por Imperva, que bloquea especificamente al cliente fetch del
+// scraper (ver sources/habitaclia.js) -> su codigo se deja intacto pero
+// fuera de este array hasta que se resuelva ese bloqueo, para no fallar en
+// cada ejecucion. pisos.com la sustituye: mismo criterio de revision
+// (robots.txt + condiciones de uso + prueba real con fetch()) pero sin
+// ningun reto anti-bot detectado.
 //
 // requierePlaywright distingue las dos formas en que el backend puede lanzar
 // esta ejecucion (ver SearchRunnerService): el boton "Ejecutar busqueda"
@@ -20,7 +28,7 @@ import * as habitaclia from './sources/habitaclia.js';
 // de las fuentes que si necesitan Playwright) y "Busqueda sin Playwright"
 // (MODO_SCRAPER=SIN_PLAYWRIGHT, solo fuentes con requierePlaywright:false,
 // sin limite diario).
-const FUENTES = [{ nombre: 'Habitaclia', buscar: habitaclia.buscar, requierePlaywright: false }];
+const FUENTES = [{ nombre: 'Pisos.com', buscar: pisos.buscar, requierePlaywright: false }];
 
 async function main() {
   const soloSinPlaywright = process.env.MODO_SCRAPER === 'SIN_PLAYWRIGHT';

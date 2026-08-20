@@ -8,4 +8,8 @@ export const configEstatico = {
   habitacliaUbicacion: 'madrid',
   // 'venta' o 'alquiler'.
   habitacliaOperacion: 'venta',
+
+  // Igual que arriba pero para pisos.com (https://www.pisos.com/venta/pisos-<slug>/).
+  pisosComUbicacion: 'madrid',
+  pisosComOperacion: 'venta',
 };

@@ -4,5 +4,6 @@ public enum Fuente {
 	IDEALISTA,
 	FOTOCASA,
 	HABITACLIA,
+	PISOS_COM,
 	OTRA
 }

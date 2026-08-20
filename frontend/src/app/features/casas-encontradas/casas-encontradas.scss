@@ -100,9 +100,21 @@
     background: #f5eede;
   }
 
-  .fila-detalle td {
+  .fila-detalle {
+    --mat-table-row-item-container-height: auto;
+  }
+
+  .celda-detalle {
+    height: 0;
+    padding: 0;
     border-bottom: none;
     white-space: normal;
+    overflow: hidden;
+
+    &.expandida {
+      height: auto;
+      border-bottom: 1px solid #e5e7eb;
+    }
   }
 }
 
