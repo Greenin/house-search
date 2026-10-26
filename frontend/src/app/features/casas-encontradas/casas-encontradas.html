@@ -60,7 +60,7 @@
 </div>
 
 <div class="tabla-container">
-  <table mat-table [dataSource]="casas()" multiTemplateDataRows class="tabla-casas">
+  <table mat-table [dataSource]="casasPagina()" multiTemplateDataRows class="tabla-casas">
     <ng-container matColumnDef="titulo">
       <th mat-header-cell *matHeaderCellDef>Título</th>
       <td mat-cell *matCellDef="let casa" [matTooltip]="casa.titulo">{{ casa.titulo }}</td>
@@ -179,4 +179,15 @@
       </td>
     </tr>
   </table>
+
+  <mat-paginator
+    class="paginador-casas"
+    [length]="casas().length"
+    [pageSize]="tamanoPagina()"
+    [pageIndex]="indicePagina()"
+    [pageSizeOptions]="tamanosPagina"
+    showFirstLastButtons
+    aria-label="Paginación de casas encontradas"
+    (page)="cambiarPagina($event)"
+  ></mat-paginator>
 </div>

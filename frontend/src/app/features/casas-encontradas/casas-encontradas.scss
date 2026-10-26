@@ -118,6 +118,17 @@
   }
 }
 
+.paginador-casas {
+  border-top: 1px solid #e5e7eb;
+  background: #faf6ee;
+  color: #6b1f1f;
+
+  // El contenedor interno del paginador alinea a la derecha por defecto.
+  ::ng-deep .mat-mdc-paginator-container {
+    justify-content: center;
+  }
+}
+
 .detalle-casa {
   padding: 0.75rem 1rem;
   display: grid;

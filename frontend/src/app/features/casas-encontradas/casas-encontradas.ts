@@ -2,10 +2,12 @@ import { DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatPaginatorIntl, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { PaginatorIntlEs } from '../../core/paginator-intl';
 import { HouseApi } from '../../core/services/house-api';
 import { SearchApi } from '../../core/services/search-api';
 import { House } from '../../core/models/house.model';
@@ -25,9 +27,20 @@ const COLUMNAS_VISIBLES = [
   'acciones',
 ];
 
+const TAMANOS_PAGINA = [10, 20, 50, 100];
+
 @Component({
   selector: 'app-casas-encontradas',
-  imports: [DatePipe, MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTableModule, MatTooltipModule],
+  imports: [
+    DatePipe,
+    MatButtonModule,
+    MatIconModule,
+    MatPaginatorModule,
+    MatProgressSpinnerModule,
+    MatTableModule,
+    MatTooltipModule,
+  ],
+  providers: [{ provide: MatPaginatorIntl, useClass: PaginatorIntlEs }],
   templateUrl: './casas-encontradas.html',
   styleUrl: './casas-encontradas.scss',
 })
@@ -37,6 +50,7 @@ export class CasasEncontradas implements OnInit {
   private readonly snackBar = inject(MatSnackBar);
 
   protected readonly columnasVisibles = COLUMNAS_VISIBLES;
+  protected readonly tamanosPagina = TAMANOS_PAGINA;
 
   protected readonly casas = signal<House[]>([]);
   protected readonly cargando = signal(false);
@@ -45,6 +59,22 @@ export class CasasEncontradas implements OnInit {
   protected readonly estadoBusqueda = signal<SearchStatus | null>(null);
   protected readonly estadoBusquedaSinPlaywright = signal<SearchStatus | null>(null);
   protected readonly idCasaExpandida = signal<number | null>(null);
+  protected readonly tamanoPagina = signal(TAMANOS_PAGINA[0]);
+  private readonly indicePaginaSolicitado = signal(0);
+
+  /**
+   * Página actual acotada a las que existen: si se quitan casas de la última
+   * página (Seleccionar) y se queda vacía, se retrocede sola a la anterior.
+   */
+  protected readonly indicePagina = computed(() => {
+    const ultima = Math.max(0, Math.ceil(this.casas().length / this.tamanoPagina()) - 1);
+    return Math.min(this.indicePaginaSolicitado(), ultima);
+  });
+
+  protected readonly casasPagina = computed(() => {
+    const inicio = this.indicePagina() * this.tamanoPagina();
+    return this.casas().slice(inicio, inicio + this.tamanoPagina());
+  });
 
   protected readonly puedeBuscarHoy = computed(() => {
     const estado = this.estadoBusqueda();
@@ -89,6 +119,7 @@ export class CasasEncontradas implements OnInit {
     this.houseApi.listar().subscribe({
       next: (casas) => {
         this.casas.set(casas);
+        this.indicePaginaSolicitado.set(0);
         this.cargando.set(false);
       },
       error: () => {
@@ -137,6 +168,11 @@ export class CasasEncontradas implements OnInit {
       },
       error: () => this.snackBar.open('No se pudo seleccionar la casa.', 'Cerrar', { duration: 5000 }),
     });
+  }
+
+  protected cambiarPagina(evento: PageEvent): void {
+    this.tamanoPagina.set(evento.pageSize);
+    this.indicePaginaSolicitado.set(evento.pageIndex);
   }
 
   protected alternarDetalle(idCasa: number): void {
