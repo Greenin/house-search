@@ -60,7 +60,7 @@ public class SearchRunnerService {
 	/**
 	 * Boton "Ejecutar busqueda": todas las fuentes, maximo una vez al dia. Antes
 	 * de lanzar el scraper se borra toda la tabla de casas encontradas (ver
-	 * HouseService.borrarTodasLasCasas): el listado de "Casas encontradas"
+	 * HouseService.borrarTodasLasCasas): el listado de "Buscar casas"
 	 * refleja siempre la ultima ejecucion, no un acumulado historico. Las casas
 	 * ya movidas a SelectedHouse no se ven afectadas.
 	 */

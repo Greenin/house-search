@@ -11,7 +11,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 })
 export class App {
   protected readonly navLinks = [
-    { path: 'casas-encontradas', label: 'Casas encontradas', icon: 'home_work' },
+    { path: 'casas-encontradas', label: 'Buscar casas', icon: 'home_work' },
     { path: 'casas-seleccionadas', label: 'Casas seleccionadas', icon: 'check_circle' },
     { path: 'configuracion-busqueda', label: 'Configuración Búsqueda', icon: 'tune' },
     { path: 'ejecucion-busqueda', label: 'Ejecución búsqueda', icon: 'history' },
